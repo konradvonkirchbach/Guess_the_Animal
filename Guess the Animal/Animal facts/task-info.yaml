@@ -1,0 +1,602 @@
+type: edu
+files:
+- name: src/animals/Main.java
+  visible: true
+  text: |
+    package animals;
+
+    import animals.GameComponents.GameMaster;
+
+    public class Main {
+        public static void main(String[] args) {
+            GameMaster gameMaster = new GameMaster();
+            gameMaster.play();
+        }
+
+    }
+  learner_created: false
+- name: src/animals/Messages/Message.java
+  visible: true
+  text: |-
+    package animals.Messages;
+
+    public interface Message {
+        public String getMessage();
+    }
+  learner_created: false
+- name: src/animals/Messages/Greeting.java
+  visible: true
+  text: |
+    package animals.Messages;
+
+    import java.time.LocalTime;
+
+    public class Greeting implements Message {
+        private static final LocalTime MORNING = LocalTime.of(5, 0);
+        private static final LocalTime AFTERNOON = LocalTime.of(12, 0);
+
+        @Override
+        public String getMessage() {
+            LocalTime t = LocalTime.now();
+            if (t.isBefore(MORNING)) {
+                return "Hi, Early Bird\n\nEnter an animal:";
+            } else if (t.isBefore(AFTERNOON)) {
+                return "Good morning\n\nEnter an animal:";
+            } else {
+                return "Good evening\n\nEnter an animal:";
+            }
+        }
+    }
+  learner_created: false
+- name: src/animals/Messages/Goodbye.java
+  visible: true
+  text: |
+    package animals.Messages;
+
+    import java.util.Random;
+    import java.util.List;
+
+    public class Goodbye implements Message {
+        private static final List<String> GOODBYES = List.of("Have a nice day!",
+                "See you soon!",
+                "Bye!",
+                "Hasta la vista, baby!",
+                "In a while, crocodile!",
+                "See you later, aligator");
+
+        private Random random = new Random();
+
+        @Override
+        public String getMessage() {
+            return GOODBYES.get(random.nextInt(GOODBYES.size()));
+        }
+    }
+  learner_created: false
+- name: src/animals/Messages/NullMessage.java
+  visible: true
+  text: |
+    package animals.Messages;
+
+    public class NullMessage implements Message {
+        @Override
+        public String getMessage() {
+            return "NULL MESSAGE";
+        }
+    }
+  learner_created: false
+- name: src/animals/GameComponents/Animal.java
+  visible: true
+  text: |
+    package animals.GameComponents;
+
+    import java.util.List;
+
+    public class Animal {
+        private static final String VOWELS = "aeiou";
+        private static final List<String> ARTICLES = List.of("a ", "an ");
+
+        private String article;
+        private String name;
+
+        public Animal(String userInput) {
+            init(userInput);
+        }
+
+        @Override
+        public java.lang.String toString() {
+            return String.format("%s %s", article, name);
+        }
+
+        private void init(String userInput) {
+            if (containsArticle(userInput)) {
+                int firstWhiteSpace = userInput.indexOf(" ");
+                article = userInput.substring(0, firstWhiteSpace);
+                name = userInput.substring(firstWhiteSpace + 1, userInput.length());
+            } else {
+                name = userInput;
+                if (VOWELS.contains(name.substring(0, 1))) {
+                    article = "an";
+                } else {
+                    article = "a";
+                }
+            }
+        }
+
+        private boolean containsArticle(String text) {
+            boolean containsArticle = false;
+            for (String article : ARTICLES) {
+                containsArticle |= text.startsWith(article);
+            }
+            return containsArticle;
+        }
+    }
+  learner_created: false
+- name: src/animals/Messages/AskAnimal.java
+  visible: true
+  text: |
+    package animals.Messages;
+
+    import animals.GameComponents.Animal;
+
+    public class AskAnimal implements Message {
+        private Animal animal;
+
+        public AskAnimal(Animal animal) {
+            this.animal = animal;
+        }
+
+        @java.lang.Override
+        public String getMessage() {
+            return String.format("Is it %s?", animal);
+        }
+    }
+  learner_created: false
+- name: src/animals/Messages/Clarification.java
+  visible: true
+  text: |
+    package animals.Messages;
+
+    import java.util.List;
+    import java.util.Random;
+
+    public class Clarification implements Message {
+        private static final List<String> CLARIFICATION_QUESTIONS = List.of(
+                "I'm not sure I caught you: was it",
+                "Funny, I still don't understand, is it",
+                "Oh, it's too complicated for me: just tell me",
+                "Could you please simply say",
+                "Oh, no, don't try to confuse me: say");
+
+        Random random = new Random();
+
+        @Override
+        public String getMessage() {
+            return String.format("%s %s?",
+                    CLARIFICATION_QUESTIONS.get(random.nextInt(CLARIFICATION_QUESTIONS.size())),
+                            "yes or no");
+        }
+    }
+  learner_created: false
+- name: src/animals/Messages/Confirmation.java
+  visible: true
+  text: |
+    package animals.Messages;
+
+    public class Confirmation implements Message {
+        private String confirmation;
+
+        public Confirmation(String confirmation) {
+            this.confirmation = confirmation;
+        }
+
+        @java.lang.Override
+        public String getMessage() {
+            return String.format("You answered: %s", confirmation);
+        }
+    }
+  learner_created: false
+- name: test/Scenario.java
+  visible: false
+  text: |-
+    import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+    import org.hyperskill.hstest.testcase.CheckResult;
+    import org.hyperskill.hstest.testing.TestedProgram;
+
+    import java.io.File;
+    import java.io.IOException;
+    import java.util.Map;
+    import java.util.function.Predicate;
+    import java.util.regex.Pattern;
+
+    import static java.text.MessageFormat.format;
+    import static java.util.function.Predicate.not;
+    import static org.hyperskill.hstest.testcase.CheckResult.correct;
+    import static org.hyperskill.hstest.testcase.CheckResult.wrong;
+
+    public class Scenario {
+        private TestedProgram main;
+        private String output = "";
+        private final File dataFile;
+        private final File scriptFile;
+
+        Scenario(String name) {
+            dataFile = new File("test/" + name + ".data.yaml");
+            scriptFile = new File("test/" + name + ".script.yaml");
+            System.out.println("Scenario '" + name + "' is started.");
+            System.out.println();
+        }
+
+        CheckResult check() {
+
+            final Object[][] data;
+            final String[][] script;
+
+            try {
+                data = new YAMLMapper().readValue(dataFile, String[][].class);
+                script = new YAMLMapper().readValue(scriptFile, String[][].class);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return wrong("Cannot find the files "
+                        + dataFile.getName()
+                        + " or "
+                        + scriptFile.getName()
+                        + ", looks like you deleted or renamed it. Please, revert the changes.");
+            }
+
+            for (var values : data) {
+                for (var action : script) {
+                    final var command = action[0];
+                    switch (command) {
+                        case "start":
+                            main = new TestedProgram();
+                            output = action.length == 1
+                                    ? main.start()
+                                    : main.start(format(action[1], values).split(" "));
+                            output = output.trim();
+                            continue;
+                        case "input":
+                            output = main.execute(format(action[1], values)).trim();
+                            continue;
+                        case "finish":
+                            if (main.isFinished()) {
+                                continue;
+                            }
+                            return wrong(format(action[1], values));
+                        default:
+                            final Map<String, Predicate<String>> validation = Map.of(
+                                    "contains", output::contains,
+                                    "not contains", not(output::contains),
+                                    "file exists", file -> new File(file).exists(),
+                                    "file delete", file -> new File(file).delete(),
+                                    "find", pattern -> Pattern.compile(pattern).matcher(output).find(),
+                                    "matches", output::matches);
+
+                            final var expected = format(action[1], values);
+                            if (validation.get(command).test(expected)) {
+                                continue;
+                            }
+                            final var feedback = format(action[2], values) + System.lineSeparator()
+                                    + "Expected " + command + ": \"" + expected + "\"" + System.lineSeparator()
+                                    + "Actual data is: \"" + output + "\".";
+                            return wrong(feedback);
+                    }
+                }
+            }
+            return correct();
+        }
+
+    }
+  learner_created: false
+- name: test/incorrect-statement.script.yaml
+  visible: false
+  text: |
+    #
+    # This is a script to test the reaction to incorrect statements.
+    #
+    ---
+    - [start]
+    - [input, cat]
+    - [input, dog]
+    - - contains
+      - Specify a fact that distinguishes a cat from a dog.
+      - The program should asks the user for a fact
+    #
+    # Here we substitute all incorrect statements from data file
+    #
+    - [input, "{0}"]
+    - - contains
+      - "examples of a statement"
+      - "The statement \"{0}\" doesn't fit the template. The program should show examples and ask the user again."
+  learner_created: false
+- name: test/correct-statement.data.yaml
+  visible: false
+  text: |
+    ---
+    - - "It is a mammal"
+    - - "It can barks"
+    - - "It has a tail"
+    - - "IT IS A SHY ANIMAL"
+    - - "it CAN swim and fly"
+    - - "it has long tooth."
+    - - "iT has five legs"
+    - - "It can catch a mouse."
+    - - "it is a danger predator."
+    - - "It is living in the forest."
+  learner_created: false
+- name: test/complete-scenario.script.yaml
+  visible: false
+  text: |-
+    #
+    # This script emulate complete sessions from start to the finish
+    #
+    ---
+    - [start]
+    - [contains, first animal, The program should asks the user for an first animal name]
+    - [input, "{0}"]
+    - [contains, second animal, The program should asks the user for an second animal name]
+    - [input, "{1}"]
+    - - contains
+      - "Specify a fact that distinguishes {2} from {3}."
+      - The program should asks the user for a fact
+    - [input, "{4}"]
+    - - contains
+      - "correct for {3}?"
+      - "The program should clarify if the statement is correct for {3}."
+    #
+    # Here the user unclear answer and the program should ask again
+    #
+    - [input, "{5}"]
+    - - contains
+      - yes or no
+      - "The user input {5} should not be recognized as correct answer. The program should ask the user again."
+    #
+    # Here the user answer correctly
+    #
+    - [input, "{6}"]
+    #
+    # The program should generate two facts and the question
+    #
+    - - contains
+      - "{7}"
+      - The program should generate a fact about the first animals.
+    - - contains
+      - "{8}"
+      - The program should generate a fact about the second animals.
+    - - contains
+      - "{9}"
+      - The program should generate a closed question.
+    - - finish
+      - The program should finish after the correct response.
+  learner_created: false
+- name: test/GuessAnimalTest.java
+  visible: false
+  text: |+
+    import org.hyperskill.hstest.dynamic.DynamicTest;
+    import org.hyperskill.hstest.stage.StageTest;
+    import org.hyperskill.hstest.testcase.CheckResult;
+
+    import java.io.IOException;
+
+    public class GuessAnimalTest extends StageTest<String> {
+
+        final String[] script = new String[]{
+                "incorrect-statement",
+                "correct-statement",
+                "complete-scenario",
+                "facts-and-question"
+        };
+
+        @DynamicTest(data = "script")
+        CheckResult runScripts(final String script) throws IOException {
+            return new Scenario(script).check();
+        }
+
+    }
+
+  learner_created: false
+- name: test/facts-and-question.script.yaml
+  visible: false
+  text: |-
+    #
+    # This script to test generation of facts and a question
+    #
+    ---
+    - [start]
+    #
+    # Here we send to the input the names of two animals and the statement.
+    #
+    - [input, "{0}"]  # The first animal
+    - [input, "{1}"]  # The second animal
+    - [input, "{2}"]  # The statement
+    - [input, "{3}"]  # Is the statement correct for the second animal?
+    #
+    # The program should generate two facts and the question
+    #
+    - - contains
+      - "{4}"
+      - "The program should generate a fact about {0}. The fact should be “{4}“."
+
+    - - contains
+      - "{5}"
+      - "The program should generate a fact about {1}. The fact should be “{5}“."
+
+    - - contains
+      - "{6}"
+      - "The program should generate a closed question: “{6}“ from statement “{2}“."
+
+    - [finish, The program should finish.]
+  learner_created: false
+- name: test/facts-and-question.data.yaml
+  visible: false
+  text: |
+    #
+    # This is a data file to test generated facts and a question
+    #
+
+    # --- user input ---
+    # The first animal
+    # The second animal
+    # The statement
+    # Is the statement correct for the second animal?
+
+    # --- expected output ---
+    # The fact for the first animal
+    # The fact for the second animal
+    # The closed question to distinguishes one animal from other
+    ---
+    - - cat
+      - shark
+      - it is a mammal
+      - no
+      - "The cat is a mammal."
+      - "The shark isn't a mammal."
+      - "Is it a mammal?"
+
+    - - wolf
+      - hare
+      - it is a shy animal
+      - yes
+      - "The wolf isn't a shy animal."
+      - "The hare is a shy animal."
+      - "Is it a shy animal?"
+
+
+    - - wolf
+      - fox
+      - it has a long bushy tail
+      - yes
+      - "The wolf doesn't have a long bushy tail."
+      - "The fox has a long bushy tail."
+      - "Does it have a long bushy tail?"
+
+    - - dog
+      - cat
+      - it can climb trees
+      - yes
+      - "The dog can't climb trees."
+      - "The cat can climb trees."
+      - "Can it climb trees?"
+
+    - - dog
+      - fox
+      - it is living in the forest
+      - yes
+      - "The dog isn't living in the forest."
+      - "The fox is living in the forest."
+      - "Is it living in the forest?"
+  learner_created: false
+- name: test/correct-statement.script.yaml
+  visible: false
+  text: |
+    #
+    # This is a script to test correct statements.
+    #
+    ---
+    - [start]
+    - [input, cat]
+    - [input, dog]
+    - - contains
+      - Specify a fact that distinguishes a cat from a dog.
+      - The program should asks the user for a fact
+    #
+    # Here we substitute all correct statements from data file
+    #
+    - [input, "{0}"]
+    - - contains
+      - correct for a dog?
+      - The program should clarify if the statement is correct for a dog.
+  learner_created: false
+- name: test/complete-scenario.data.yaml
+  visible: false
+  text: |
+    #
+    # The data for the complete scenario from the start to the finish
+    #
+    ---
+    - - "cat"
+      - "DOG"
+      - "a cat"
+      - "a dog"
+      - "It can climb trees"
+      - "ha"
+      - "no"
+      - "The cat can climb trees"
+      - "The dog can't climb trees"
+      - "Can it climb trees?"
+
+    - - "hare"
+      - "wolf"
+      - "a hare"
+      - "a wolf"
+      - "It is a shy animal"
+      - "nej"
+      - "no"
+      - "The hare is a shy animal"
+      - "The wolf isn't a shy animal"
+      - "Is it a shy animal?"
+
+    - - "a lynx"
+      - "an unicorN"
+      - "a lynx"
+      - "an unicorn"
+      - "It is a fabulous animal?"
+      - "of c"
+      - "yes"
+      - "The lynx isn't a fabulous animal"
+      - "The unicorn is a fabulous animal"
+      - "Is it a fabulous animal?"
+  learner_created: false
+- name: test/incorrect-statement.data.yaml
+  visible: false
+  text: |
+    #
+    # All of these statements are wrong.
+    #
+    ---
+    - - "The dog barks"
+    - - "The cat meows"
+    - - "I don't know..."
+    - - "Who knows?"
+    - - "It flies"
+    - - "It barks"
+    - - "Can it fly?"
+    - - "It fly"
+    - - "may be it barks?"
+    - - "I do not what to say..."
+  learner_created: false
+- name: src/animals/GameComponents/Engine/GameMaster.java
+  visible: true
+  learner_created: true
+- name: src/animals/Messages/InterpretFacts.java
+  visible: true
+  learner_created: true
+- name: src/animals/GameComponents/Engine/Interogator.java
+  visible: true
+  learner_created: true
+- name: src/animals/Actions/impl/Question.java
+  visible: true
+  learner_created: true
+- name: src/animals/GameInformation/InformationAccess.java
+  visible: true
+  learner_created: true
+- name: src/animals/GameComponents/Fact.java
+  visible: true
+  learner_created: true
+- name: src/animals/GameComponents/Engine/UserInteraction.java
+  visible: true
+  learner_created: true
+- name: src/animals/GameInformation/GameInformation.java
+  visible: true
+  learner_created: true
+- name: src/animals/GameComponents/Engine/Interpreter.java
+  visible: true
+  learner_created: true
+- name: src/animals/Actions/impl/Statement.java
+  visible: true
+  learner_created: true
+- name: src/animals/Actions/Actions.java
+  visible: true
+  learner_created: true
+feedback_link: https://hyperskill.org/projects/132/stages/704/implement#comment
+status: Solved
+record: 1

@@ -1,0 +1,1256 @@
+type: edu
+files:
+- name: src/animals/Main.java
+  visible: true
+  text: |-
+    package animals;
+
+    import animals.GameComponents.Engine.GameMaster;
+
+    public class Main {
+
+        public static void main(String[] args) {
+            GameMaster gameMaster = new GameMaster();
+            gameMaster.play();
+        }
+
+    }
+  learner_created: false
+- name: src/animals/Messages/Message.java
+  visible: true
+  text: |-
+    package animals.Messages;
+
+    public interface Message {
+        public String getMessage();
+    }
+  learner_created: false
+- name: src/animals/Messages/Greeting.java
+  visible: true
+  text: |
+    package animals.Messages;
+
+    import java.time.LocalTime;
+
+    public class Greeting implements Message {
+        private static final LocalTime MORNING = LocalTime.of(5, 0);
+        private static final LocalTime AFTERNOON = LocalTime.of(12, 0);
+
+        @Override
+        public String getMessage() {
+            LocalTime t = LocalTime.now();
+            if (t.isBefore(MORNING)) {
+                return "Hi, Early Bird\n";
+            } else if (t.isBefore(AFTERNOON)) {
+                return "Good morning\n";
+            } else {
+                return "Good evening\n";
+            }
+        }
+    }
+  learner_created: false
+- name: src/animals/Messages/Goodbye.java
+  visible: true
+  text: |
+    package animals.Messages;
+
+    import java.util.Random;
+    import java.util.List;
+
+    public class Goodbye implements Message {
+        private static final List<String> GOODBYES = List.of("Have a nice day!",
+                "See you soon!",
+                "Bye!",
+                "Hasta la vista, baby!",
+                "In a while, crocodile!",
+                "See you later, aligator");
+
+        private Random random = new Random();
+
+        @Override
+        public String getMessage() {
+            return GOODBYES.get(random.nextInt(GOODBYES.size()));
+        }
+    }
+  learner_created: false
+- name: src/animals/Messages/NullMessage.java
+  visible: true
+  text: |
+    package animals.Messages;
+
+    public class NullMessage implements Message {
+        @Override
+        public String getMessage() {
+            return "NULL MESSAGE";
+        }
+    }
+  learner_created: false
+- name: src/animals/GameComponents/Animal.java
+  visible: true
+  text: |
+    package animals.GameComponents;
+
+    import animals.GameComponents.Engine.UserInteraction;
+
+    import java.util.List;
+
+    public class Animal {
+        private static final String VOWELS = "aeiou";
+        private static final List<String> ARTICLES = List.of("a ", "an ");
+
+        private String article;
+        private String name;
+        private Fact fact;
+
+        public Animal() {
+            init(UserInteraction.getUserInput());
+        }
+
+        public String getArticle() {
+            return article;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Fact getFact() {
+            return fact;
+        }
+
+        public void setFact(Fact fact) {
+            this.fact = fact;
+        }
+
+        @Override
+        public java.lang.String toString() {
+            return String.format("%s %s", article, name);
+        }
+
+        private void init(String userInput) {
+            if (containsArticle(userInput)) {
+                int firstWhiteSpace = userInput.indexOf(" ");
+                article = userInput.substring(0, firstWhiteSpace);
+                name = userInput.substring(firstWhiteSpace + 1, userInput.length());
+            } else {
+                name = userInput;
+                if (VOWELS.contains(name.substring(0, 1))) {
+                    article = "an";
+                } else {
+                    article = "a";
+                }
+            }
+        }
+
+        private boolean containsArticle(String text) {
+            boolean containsArticle = false;
+            for (String article : ARTICLES) {
+                containsArticle |= text.startsWith(article);
+            }
+            return containsArticle;
+        }
+    }
+  learner_created: false
+- name: src/animals/Messages/AskAnimal.java
+  visible: true
+  text: |
+    package animals.Messages;
+
+    import animals.GameComponents.Animal;
+
+    public class AskAnimal implements Message {
+        private Animal animal;
+
+        public static Animal askFirstAnimal() {
+            System.out.println("Enter the first animal:");
+            return new Animal();
+        }
+
+        public static Animal askSecondAnimal() {
+            System.out.println("Enter the second animal:");
+            return new Animal();
+        }
+
+        public AskAnimal(Animal animal) {
+            this.animal = animal;
+        }
+
+        @java.lang.Override
+        public String getMessage() {
+            return String.format("Is it %s?", animal);
+        }
+    }
+  learner_created: false
+- name: src/animals/Messages/Clarification.java
+  visible: true
+  text: |
+    package animals.Messages;
+
+    import java.util.List;
+    import java.util.Random;
+
+    public class Clarification implements Message {
+        private static final List<String> CLARIFICATION_QUESTIONS = List.of(
+                "I'm not sure I caught you: was it",
+                "Funny, I still don't understand, is it",
+                "Oh, it's too complicated for me: just tell me",
+                "Could you please simply say",
+                "Oh, no, don't try to confuse me: say");
+
+        Random random = new Random();
+
+        @Override
+        public String getMessage() {
+            return String.format("%s %s?",
+                    CLARIFICATION_QUESTIONS.get(random.nextInt(CLARIFICATION_QUESTIONS.size())),
+                            "yes or no");
+        }
+    }
+  learner_created: false
+- name: src/animals/Messages/Confirmation.java
+  visible: true
+  text: |
+    package animals.Messages;
+
+    public class Confirmation implements Message {
+        private String confirmation;
+
+        public Confirmation(String confirmation) {
+            this.confirmation = confirmation;
+        }
+
+        @java.lang.Override
+        public String getMessage() {
+            return String.format("You answered: %s", confirmation);
+        }
+    }
+  learner_created: false
+- name: src/animals/Actions/Actions.java
+  visible: true
+  text: |-
+    package animals.Actions;
+
+    public interface Actions {
+        public boolean isQuestion();
+    }
+  learner_created: false
+- name: src/animals/Actions/impl/Statement.java
+  visible: true
+  text: |
+    package animals.Actions.impl;
+
+    import animals.Actions.Actions;
+
+    public enum Statement implements Actions {
+        GREET,
+        GOODBYE,
+        FACT;
+
+        @Override
+        public boolean isQuestion() {
+            return false;
+        }
+    }
+  learner_created: false
+- name: src/animals/Actions/impl/Question.java
+  visible: true
+  text: |
+    package animals.Actions.impl;
+
+    import animals.Actions.Actions;
+
+    public enum Question implements Actions {
+        ASK_FIRST_ANIMAL,
+        ASK_SECOND_ANIMAL,
+        ASK_FOR_FACT,
+        ASK_AGAIN,
+        CONFIRM_POSITIV,
+        CONFIRM_NEGATIV;
+
+
+        @Override
+        public boolean isQuestion() {
+            return true;
+        }
+    }
+  learner_created: false
+- name: src/animals/GameInformation/InformationAccess.java
+  visible: true
+  text: |
+    package animals.GameInformation;
+
+    import animals.GameComponents.Engine.Interogator;
+    import animals.GameComponents.Engine.Interpreter;
+
+    public class InformationAccess {
+        private static final GameInformation gameInformation = new GameInformation();
+        private static final Interpreter interpreter = new Interpreter();
+        private static final Interogator interogator = new Interogator();
+
+        public static GameInformation getGameInformation() {
+            return gameInformation;
+        }
+
+        public static Interpreter getInterpreter() {
+            return interpreter;
+        }
+
+        public static Interogator getInterogator() {
+            return interogator;
+        }
+
+        private InformationAccess() {};
+    }
+  learner_created: false
+- name: src/animals/GameInformation/GameInformation.java
+  visible: true
+  text: |
+    package animals.GameInformation;
+
+    import animals.GameComponents.Animal;
+
+    public class GameInformation {
+        private Animal fistAnimal;
+        private Animal secondAnimal;
+
+        public Animal getFistAnimal() {
+            return fistAnimal;
+        }
+
+        public void setFistAnimal(Animal fistAnimal) {
+            this.fistAnimal = fistAnimal;
+        }
+
+        public Animal getSecondAnimal() {
+            return secondAnimal;
+        }
+
+        public void setSecondAnimal(Animal secondAnimal) {
+            this.secondAnimal = secondAnimal;
+        }
+    }
+  learner_created: false
+- name: src/animals/GameComponents/Engine/GameMaster.java
+  visible: true
+  text: |
+    package animals.GameComponents.Engine;
+
+    import animals.Actions.Actions;
+    import animals.Actions.impl.Question;
+    import animals.Actions.impl.Statement;
+    import animals.GameInformation.InformationAccess;
+
+    public class GameMaster {
+        private Interogator interogator;
+        private Interpreter interpreter;
+        private Actions nextAction;
+
+        public GameMaster() {
+            interogator = InformationAccess.getInterogator();
+            interpreter = InformationAccess.getInterpreter();
+            init();
+        }
+
+        public void play() {
+            /*
+            while (nextAction != Question.CONFIRM_NEGATIV && nextAction != Question.CONFIRM_POSITIV) {
+                interogator.performAction(nextAction);
+                nextAction = interpreter.interpretInput(UserInteraction.getUserInput());
+            }
+             */
+            interogator.performAction(nextAction);
+            interogator.performAction(Statement.FACT);
+            interogator.performAction(Statement.GOODBYE);
+        }
+
+        private void init() {
+            interogator.performAction(Statement.GREET);
+            interogator.performAction(Question.ASK_FIRST_ANIMAL);
+            interogator.performAction(Question.ASK_SECOND_ANIMAL);
+            nextAction = Question.ASK_FOR_FACT;
+        }
+
+    }
+  learner_created: false
+- name: src/animals/GameComponents/Engine/Interogator.java
+  visible: true
+  text: |
+    package animals.GameComponents.Engine;
+
+    import animals.Actions.Actions;
+    import animals.Actions.impl.Question;
+    import animals.Actions.impl.Statement;
+    import animals.GameComponents.Fact;
+    import animals.GameInformation.GameInformation;
+    import animals.GameInformation.InformationAccess;
+    import animals.Messages.*;
+
+    import java.util.logging.Logger;
+
+    public class Interogator {
+
+        private static final Logger LOGGER = Logger.getLogger(Interogator.class.getName());
+        private GameInformation gameInformation = InformationAccess.getGameInformation();
+
+        public void performAction(Actions action) {
+            if (action.isQuestion()) {
+                askQuestion(action);
+            } else {
+                makeStatement(action);
+            }
+        }
+
+        private void askQuestion(Actions action) throws IllegalArgumentException {
+            Question question = (Question) action;
+            LOGGER.info(String.format("Next action %s", question.name()));
+            switch (question) {
+                case ASK_FIRST_ANIMAL:
+                    gameInformation.setFistAnimal(AskAnimal.askFirstAnimal());
+                    break;
+                case ASK_SECOND_ANIMAL:
+                    gameInformation.setSecondAnimal(AskAnimal.askSecondAnimal());
+                    break;
+                case ASK_FOR_FACT:
+                    setFact();
+                    break;
+                default:
+                    throw new IllegalArgumentException(String.format("No question %s found", question.name()));
+            }
+        }
+
+        private void makeStatement(Actions action) throws IllegalArgumentException {
+            Statement statement = (Statement) action;
+            LOGGER.info(String.format("Next action %s", statement.name()));
+            switch (statement) {
+                case GREET:
+                    System.out.println(new Greeting().getMessage());
+                    break;
+                case GOODBYE:
+                    System.out.println(new Goodbye().getMessage());
+                    break;
+                case FACT:
+                    System.out.println(new InterpretFacts().getMessage());
+                    break;
+                default:
+                    throw new IllegalArgumentException(String.format("No statement %s found", statement.name()));
+            }
+        }
+
+        private void setFact() {
+            Fact fact = new Fact();
+            while (true) {
+                System.out.println(String.format("Is it correct for %s?", gameInformation.getSecondAnimal()));
+                String userInput = UserInteraction.getUserInput();
+                if (InformationAccess.getInterpreter().answerIsYes(userInput)) {
+                    Fact falsified = new Fact(fact);
+                    falsified.setNegated(true);
+                    gameInformation.getSecondAnimal().setFact(fact);
+                    gameInformation.getFistAnimal().setFact(falsified);
+                    break;
+                }
+                if (InformationAccess.getInterpreter().answerIsNo(userInput)) {
+                    Fact falsified = new Fact(fact);
+                    falsified.setNegated(true);
+                    gameInformation.getSecondAnimal().setFact(falsified);
+                    gameInformation.getFistAnimal().setFact(fact);
+                    break;
+                } else {
+                    System.out.println(new Clarification().getMessage());
+                }
+            }
+        }
+
+    }
+  learner_created: false
+- name: src/animals/GameComponents/Engine/UserInteraction.java
+  visible: true
+  text: |
+    package animals.GameComponents.Engine;
+
+    import java.util.Locale;
+    import java.util.Scanner;
+
+    public class UserInteraction {
+
+        private static final Scanner scanner = new Scanner(System.in);
+
+        public static String getUserInput() {
+            System.out.print("> ");
+            return scanner.nextLine().toLowerCase(Locale.ROOT);
+        }
+
+        private UserInteraction() {}
+    }
+  learner_created: false
+- name: src/animals/GameComponents/Fact.java
+  visible: true
+  text: |
+    package animals.GameComponents;
+
+    import animals.GameComponents.Engine.UserInteraction;
+    import animals.GameInformation.GameInformation;
+    import animals.GameInformation.InformationAccess;
+
+    import java.util.regex.Matcher;
+    import java.util.regex.Pattern;
+
+    public class Fact {
+        private static final Pattern pattern = Pattern.compile("has|is|can", Pattern.CASE_INSENSITIVE);
+        private static final GameInformation gameInformation = InformationAccess.getGameInformation();
+
+        public static final String INITIAL_QUESTION = String.format("Specify a fact that distinguishes %s from %s.\n" +
+                        "The sentence should be of the format: 'It can/has/is ...'.\n",
+                gameInformation.getFistAnimal(),
+                gameInformation.getSecondAnimal());
+        public static final String EXAMPLE_STATEMENTS = "The examples of a statement:\n - It can fly\n - It has a horn\n - It is a mammal";
+
+        private boolean isNegated;
+
+        private String verb;
+        private String object;
+
+        public Fact() {
+            System.out.println(INITIAL_QUESTION);
+            init();
+        }
+
+        public Fact(Fact f) {
+            this.verb = f.verb;
+            this.object = f.object;
+            this.isNegated = f.isNegated;
+        }
+
+        public boolean isNegated() {
+            return isNegated;
+        }
+
+        public void setNegated(boolean negated) {
+            isNegated = negated;
+        }
+
+        @Override
+        public String toString() {
+            return !isNegated ? String.format("%s%s", verb, object) : String.format("%s%s", negate(), object);
+        }
+
+        public String turnIntoQuestion() {
+            switch (verb) {
+                case "has":
+                    return String.format("- Does it have%s?", object);
+                case "is":
+                    return String.format("- Is it%s?", object);
+                case "can":
+                    return String.format("- Can it%s?", object);
+                default:
+                    throw new IllegalArgumentException(String.format("No action found for verb: %s", verb));
+            }
+        }
+
+        private String negate() {
+            switch (verb) {
+                case "has":
+                    return "doesn't have";
+                case "is":
+                    return "isn't";
+                case "can":
+                    return "can't";
+                default:
+                    throw new IllegalArgumentException(String.format("Verb %s could not be negated", verb));
+            }
+        }
+
+        private void init() {
+            while (true) {
+                String answer = UserInteraction.getUserInput();
+                answer = InformationAccess.getInterpreter().sanitize(answer);
+                Matcher matcher = pattern.matcher(answer);
+                if (matcher.find() && !InformationAccess.getInterpreter().isStatment(answer)) {
+                    verb = matcher.group();
+                    object = answer.substring(3 + verb.length(), answer.length());
+                    break;
+                } else {
+                    System.out.println(String.format("%s\n%s", EXAMPLE_STATEMENTS, INITIAL_QUESTION));
+                }
+            }
+        }
+    }
+  learner_created: false
+- name: src/animals/Messages/InterpretFacts.java
+  visible: true
+  text: |
+    package animals.Messages;
+
+    import animals.GameComponents.Animal;
+    import animals.GameInformation.GameInformation;
+    import animals.GameInformation.InformationAccess;
+
+    public class InterpretFacts implements Message {
+        private final GameInformation gameInformation;
+
+        public InterpretFacts() {
+            gameInformation = InformationAccess.getGameInformation();
+        }
+
+        @Override
+        public String getMessage() {
+            Animal firstAnimal = gameInformation.getFistAnimal();
+            Animal secondAnimal = gameInformation.getSecondAnimal();
+            return String.format("I leanred the following facts about animals:\n- The %s %s.\n- The %s %s.\n" +
+                            "I can distinguish these animals by asking the question:\n%s\n",
+                    firstAnimal.getName(),
+                    firstAnimal.getFact().toString(),
+                    secondAnimal.getName(),
+                    secondAnimal.getFact().toString(),
+                    !firstAnimal.getFact().isNegated() ? firstAnimal.getFact().turnIntoQuestion() : secondAnimal.getFact().turnIntoQuestion());
+        }
+    }
+  learner_created: false
+- name: src/animals/GameComponents/Engine/Interpreter.java
+  visible: true
+  text: |
+    package animals.GameComponents.Engine;
+
+    import animals.Actions.Actions;
+    import animals.Actions.impl.Question;
+
+    import java.util.List;
+    import java.util.regex.Matcher;
+    import java.util.regex.Pattern;
+
+    public class Interpreter {
+        private static final List<String> POSITIVE_RESPONSES = List.of("y",
+                "yes", "yeah", "yep", "sure", "right",
+                "affirmative", "correct", "indeed", "you bet",
+                "exactly", "you said it");
+        private static final List<String> NEGATIV_ANSWERS = List.of("n",
+                "no", "no way", "nah", "nope", "negative", "i don't think so",
+                "yeah no");
+
+        public Actions interpretInput(String userInput) {
+            String cleanedInput = sanitize(userInput);
+            if (POSITIVE_RESPONSES.contains(cleanedInput)) {
+                return Question.CONFIRM_POSITIV;
+            } else if (NEGATIV_ANSWERS.contains(cleanedInput)) {
+                return Question.CONFIRM_NEGATIV;
+            } else {
+                return Question.ASK_AGAIN;
+            }
+        }
+
+        public boolean answerIsYes(String userInput) {
+            if (POSITIVE_RESPONSES.contains(sanitize(userInput))) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        public boolean answerIsNo(String userInput) {
+            if (NEGATIV_ANSWERS.contains(sanitize(userInput))) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        public boolean isStatment(String userInput) {
+            Pattern pattern = Pattern.compile("it can|it has|it is", Pattern.CASE_INSENSITIVE);
+            Matcher matcher = pattern.matcher(userInput);
+            return !matcher.find();
+        }
+
+        public String sanitize(String input) {
+            String sanitized = input.trim();
+            Pattern pattern = Pattern.compile("\\.{1,}|!{1,}|\\?{1,}");
+            Matcher matcher = pattern.matcher(sanitized);
+            if (matcher.find()) {
+                String punctuations = matcher.group();
+                return sanitized.substring(0, sanitized.length() - punctuations.length());
+            }
+            return  sanitized;
+        }
+
+    }
+  learner_created: false
+- name: test/unclear-answers.script.yaml
+  visible: false
+  text: |
+    #
+    # This is a script to test the interpretation of unclear responses.
+    #
+    ---
+    - [start]
+    - [input, cat]
+    - [input, ""]   # Press Enter to start the game
+    #
+    # The game started
+    #
+    - [contains, "Is it a cat?", "The program should ask: \"Is it a cat?\""]
+    #
+    # Here we substitute all values from the data file
+    #
+    - [input, "{0}"]
+    - - contains
+      - "yes or no"
+      - "The answer \"{0}\" is unclear and the program should ask again."
+  learner_created: false
+- name: test/unclear-answers.data.yaml
+  visible: false
+  text: |-
+    #
+    # All of the following expressions should be treated as unclear
+    #
+    ---
+    - - y..
+    - - Y!.
+    - - ye
+    - - jes
+    - - Jes
+    - - yes...
+    - - да
+    - - Так
+    - - yes, yes
+    - - Yea
+    - - Ja
+    - - Jawohl!
+    - - ja natürlich!
+    - - so genau
+    - - 1
+    - - +
+    - - yepi
+    - - Yep!!
+    - - Yes, sure!
+    - - Ok
+    - - Rights
+    - - affErmative
+    - - n..
+    - - N!!
+    - - nea
+    - - nop
+    - - noppi
+    - - no wa
+    - - no way!!!
+    - - na
+    - - nahi
+    - - nega
+    - - negat
+    - - negati
+    - - negativ
+    - - i don't think..
+    - - i don't
+    - - i
+    - - I no
+    - - i don't think so...
+    - -
+  learner_created: false
+- name: test/the-first-question.script.yaml
+  visible: false
+  text: |-
+    #
+    # This is a script to test the generation of the first question.
+    #
+    ---
+    - [start]
+    - [input, "{0}"]
+    - [input, ""]   # Press Enter to start the game
+    #
+    # The game started
+    #
+    - [contains, "Is it {1}?", "The program should ask: \"Is it {1}?\""]
+  learner_created: false
+- name: test/positive-answers.script.yaml
+  visible: false
+  text: |+
+    #
+    # This is a script to test the correct interpretation of negative responses.
+    #
+    ---
+    - [start]
+    - [input, cat]
+    - [input, ""]   # Press Enter to start the game
+    #
+    # The game started
+    #
+    - [contains, "Is it a cat?", "The program should ask: \"Is it a cat?\""]
+    #
+    # Here we substitute all values from the data file
+    #
+    - [input, "{0}"]
+    - - not contains
+      - "yes or no"
+      - "The answer \"{0}\" should be treated as correct positive."
+
+  learner_created: false
+- name: test/Scenario.java
+  visible: false
+  text: |-
+    import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+    import org.hyperskill.hstest.testcase.CheckResult;
+    import org.hyperskill.hstest.testing.TestedProgram;
+
+    import java.io.File;
+    import java.io.IOException;
+    import java.util.Map;
+    import java.util.function.Predicate;
+    import java.util.regex.Pattern;
+
+    import static java.text.MessageFormat.format;
+    import static java.util.function.Predicate.not;
+    import static org.hyperskill.hstest.testcase.CheckResult.correct;
+    import static org.hyperskill.hstest.testcase.CheckResult.wrong;
+
+    public class Scenario {
+        private TestedProgram main;
+        private String output = "";
+        private final File dataFile;
+        private final File scriptFile;
+
+        Scenario(String name) {
+            dataFile = new File("test/" + name + ".data.yaml");
+            scriptFile = new File("test/" + name + ".script.yaml");
+            System.out.println("Scenario '" + name + "' is started.");
+            System.out.println();
+        }
+
+        CheckResult check() {
+
+            final Object[][] data;
+            final String[][] script;
+
+            try {
+                data = new YAMLMapper().readValue(dataFile, String[][].class);
+                script = new YAMLMapper().readValue(scriptFile, String[][].class);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return wrong("Cannot find the files "
+                        + dataFile.getName()
+                        + " or "
+                        + scriptFile.getName()
+                        + ", looks like you deleted or renamed it. Please, revert the changes.");
+            }
+
+            for (var values : data) {
+                for (var action : script) {
+                    final var command = action[0];
+                    switch (command) {
+                        case "start":
+                            main = new TestedProgram();
+                            output = action.length == 1
+                                    ? main.start()
+                                    : main.start(format(action[1], values).split(" "));
+                            output = output.trim();
+                            continue;
+                        case "input":
+                            output = main.execute(format(action[1], values)).trim();
+                            continue;
+                        case "finish":
+                            if (main.isFinished()) {
+                                continue;
+                            }
+                            return wrong(format(action[1], values));
+                        default:
+                            final Map<String, Predicate<String>> validation = Map.of(
+                                    "contains", output::contains,
+                                    "not contains", not(output::contains),
+                                    "file exists", file -> new File(file).exists(),
+                                    "file delete", file -> new File(file).delete(),
+                                    "find", pattern -> Pattern.compile(pattern).matcher(output).find(),
+                                    "matches", output::matches);
+
+                            final var expected = format(action[1], values);
+                            if (validation.get(command).test(expected)) {
+                                continue;
+                            }
+                            final var feedback = format(action[2], values) + System.lineSeparator()
+                                    + "Expected " + command + ": \"" + expected + "\"" + System.lineSeparator()
+                                    + "Actual data is: \"" + output + "\".";
+                            return wrong(feedback);
+                    }
+                }
+            }
+            return correct();
+        }
+
+    }
+  learner_created: false
+- name: test/the-first-question.data.yaml
+  visible: false
+  text: |-
+    ---
+    - [cat, a cat]
+    - [DOG, a dog]
+    - [hare, a hare]
+    - [WOLF, a wolf]
+    - [uniCorn, an unicorn]
+    - [uniCorn, an unicorn]
+    - [A Unicorn, a unicorn]
+    - [APE, an ape]
+    - [uniCorn, an unicorn]
+    - [uniCorn, an unicorn]
+    - [linX, a linx]
+  learner_created: false
+- name: test/positive-answers.data.yaml
+  visible: false
+  text: |-
+    #
+    # The possible positive answers
+    #
+    ---
+    # The program must ignore the case of letters.
+    - - y
+    - - Y
+    # The user can put a point
+    - - y.
+    - - Y.
+    # An exclamation mark is also allowed.
+    - - y!
+    - - Y!
+    # The program must ignore leading spaces.
+    - - "   Yes"
+    # As well ignore trailing spaces.
+    - - "Yes   "
+    # All of the following expressions are valid answers.
+    - - yes
+    - - Yes
+    - - YES
+    - - yes.
+    - - Yes!
+    - - YES!
+    - - yES!
+    - - YeS
+    - - Yeah
+    - - yeah
+    - - Yeah!
+    - - YeAh.
+    - - YEAH
+    - - yep
+    - - yEp
+    - - Yep!
+    - - YEP.
+    - - sure
+    - - Sure!
+    - - SURE!
+    - - surE.
+    - - right
+    - - Right.
+    - - Right!
+    - - affirmative
+    - - Affirmative!
+    - - correct
+    - - correct.
+    - - indeed
+    - - you bet
+    - - exactly
+    - - you said it.
+    - - you said it!
+    - - you said it
+  learner_created: false
+- name: test/GuessAnimalTest.java
+  visible: false
+  text: |-
+    import org.hyperskill.hstest.dynamic.DynamicTest;
+    import org.hyperskill.hstest.stage.StageTest;
+    import org.hyperskill.hstest.testcase.CheckResult;
+
+    import java.io.IOException;
+
+    public class GuessAnimalTest extends StageTest<String> {
+        final String[] script = new String[]{
+                "the-first-question",
+                "positive-answers",
+                "negative-answers",
+                "unclear-answers",
+                "guessing-game"
+        };
+
+        @DynamicTest(data = "script")
+        CheckResult runScripts(final String script) throws IOException {
+            return new Scenario(script).check();
+        }
+
+    }
+  learner_created: false
+- name: test/negative-answers.script.yaml
+  visible: false
+  text: |
+    #
+    # This is a script to test the correct interpretation of negative answers.
+    #
+    ---
+    - [start]
+    - [input, cat]
+    - [input, ""]   # Press Enter to start the game
+    #
+    # The game started
+    #
+    - [contains, "Is it a cat?", "The program should ask: \"Is it a cat?\""]
+    #
+    # Here we substitute all values from the data file
+    #
+    - [input, "{0}"]
+    - - not contains
+      - "yes or no"
+      - "The answer \"{0}\" should be treated as correct negative."
+  learner_created: false
+- name: test/negative-answers.data.yaml
+  visible: false
+  text: |
+    #
+    # The possible negative answers
+    #
+    ---
+    # The program must ignore the case of letters.
+    - - n
+    - - N
+    # The user can put a point
+    - - n.
+    - - N.
+    # An exclamation mark is also allowed.
+    - - n!
+    - - N!
+    # The program must ignore leading spaces.
+    - - "   No"
+    # As well ignore trailing spaces.
+    - - "No   "
+    # All of the following expressions are valid answers.
+    - - no
+    - - nO
+    - - NO
+    - - No
+    - - no.
+    - - no!
+    - - No!
+    - - NO!
+    - - no way
+    - - no way!
+    - - No Way!
+    - - NO WAY!
+    - - no waY.
+    - - nah
+    - - Nah.
+    - - NAH!
+    - - naH
+    - - nope
+    - - NoPe!
+    - - NOPE.
+    - - negative
+    - - Negative.
+    - - i don't think so
+    - - I don't think so
+    - - I don't think so.
+    - - I don't Think SO.
+    - - yeah no
+    - - yeah no.
+    - - yeah no!
+    - - yeah NO!
+  learner_created: false
+- name: test/guessing-game.data.yaml
+  visible: false
+  text: |
+    #
+    # This data file for test the Knowledge Tree
+    #
+    # Can it climb trees?
+    #  yes -> Does it have tassels on his ears?
+    #         -> yes -> Lynx
+    #         -> no  -> Cat
+    #  no  -> Is it living in the forest?
+    #         -> yes -> wolf
+    #         -> no  -> dog
+    #
+    ---
+    - - |
+        yes
+        yes
+      - a lynx
+
+    - - |
+        yes
+        no
+      - a cat
+
+    - - |
+        no
+        yes
+      - a wolf
+
+    - - |
+        no
+        no
+      - a dog
+  learner_created: false
+- name: test/guessing-game.script.yaml
+  visible: false
+  text: |+
+    #
+    # This is a scenario for testing of the Guessing Game
+    #
+    ---
+    - [start]
+
+    - - contains
+      - I want to learn about animals
+      - |
+        When the program starts, the knowledge tree is empty.
+        The program should express its desire to learn about animals.
+
+    - - contains
+      - Which animal do you like
+      - To build an initial tree of knowledge, the program must ask the user about his favorite animal.
+
+    - [input, cat]
+
+    - - contains
+      - play a game
+      - After the user specifying a favorite animal, the program should offer him to play a game.
+
+    - - contains
+      - You think of an animal
+      - The program must explain the rules of the game to the user.
+
+    - - contains
+      - Press enter
+      - The program should be paused. The user will think of an animal and then press Enter.
+
+    - [input, ""]
+
+    #
+    # After user press Enter the game started!
+    #
+
+    - - contains
+      - Is it a cat?
+      - The very first question in the very first game should undoubtedly be about a beloved animal.
+
+    - [input, No] # We think of about other animal, not about the cat
+
+    - - contains
+      - I give up. What animal do you have in mind?
+      - If the program can't guess the animal, it must give up.
+
+    - [input, dog] # Of course, our second animal is a dog!
+
+    - - contains
+      - Specify a fact that distinguishes a cat from a dog
+      - The program should find out how one animal differs from another.
+
+    - [input, "it can climb trees"]
+
+    - - contains
+      - correct for a dog?
+      - The program should clarify if the statement is correct for a dog.
+
+    - [input, no]
+
+    - - contains
+      - The cat can climb trees
+      - The program must generate the correct fact for the first animal.
+
+    - - find
+      - The dog can.t climb tree
+      - The program must generate the correct fact for the second animal.
+
+    - - find
+      - "(?i)(again|repeat|one more)"
+      - The program should invite the user to play this wonderful game again.
+
+    - [input, yes] # Without a doubt, we are playing again!
+
+    - - contains
+      - You think of an animal
+      - The program must explain the rules of the game to the user.
+
+    - - find
+      - Press enter when you.re ready
+      - The program should be paused. The user will think of an animal and then press Enter.
+
+    - [input, ""]
+
+    #
+    # The second game just started!
+    #
+    # Now in our Knowledge Tree has two animals and one fact.
+    #
+
+    - - contains
+      - Can it climb trees?
+      - After the first game, the starting question should be the question of fact.
+
+    - [input, yes]
+
+    - - contains
+      - Is it a cat?
+      - The program must assume that the animal is a cat.
+
+    - - input
+      - |
+        no
+        lynx
+        it has tassels on his ears
+        yes
+        yes
+
+    # We had played the game, and would like to play again.
+
+    - [input, ""]
+
+    #
+    # The third game just started!
+    #
+    # Now in our Knowledge Tree has three animals and two fact.
+    #
+
+    - - contains
+      - Can it climb trees?
+      - |
+      - The very first fact that the program learns is always the root element.
+      - In every game, the question of this fact should be the first question.
+
+    - [input, no] # No, the animal can't climb trees
+
+    - - contains
+      - Is it a dog?
+      - The program must assume that the animal is a dog.
+
+    - - input
+      - |
+        no
+        wolf
+        it is living in the forest
+        yes
+        yes
+
+    # We had played the game, and would like to play again.
+
+    - [input, ""]
+    #
+    # The forth game just started!
+    #
+    # The Knowledge Tree has four animals and tree fact.
+    #
+    # Now we will use data from the data file to substitute user answers.
+    # This will allow us to check the correctness of the tree construction.
+
+    - [input, "{0}"]
+
+    - - contains
+      - "Is it {1}?"
+      - "The expected animal must be {1}"
+
+    - [input, yes] # The program guessed the animal we conceived
+
+    - [input, no] # We don't want to play anymore
+
+    - - finish
+      - If we do not want to play any more, then the program should exit.
+
+  learner_created: false
+- name: src/animals/GameComponents/Engine/BinaryTree/GameTree.java
+  visible: true
+  learner_created: true
+- name: src/animals/GameComponents/Engine/BinaryTree/Node.java
+  visible: true
+  learner_created: true
+feedback_link: https://hyperskill.org/projects/132/stages/705/implement#comment
+status: Solved
+record: 2
